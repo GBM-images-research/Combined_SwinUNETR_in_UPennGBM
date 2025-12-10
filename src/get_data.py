@@ -193,7 +193,7 @@ class CustomDataset(Dataset):
     #     if self.transform:
     #         image, label = self._transform(index=index)
     #     return {"image": image, "label": label}
-    
+
     def __getitem__(self, index):
         if self.transform:
             image, label = self._transform(index=index)
@@ -210,7 +210,11 @@ class CustomDataset(Dataset):
         modalities = ["images_DSC", "images_DTI", "images_structural"]
         # Lista con el orden estricto de las modalidades
         modality_order = {
-            "images_DSC": ["DSC_ap-rCBV", "DSC_PH", "DSC_PSR"], # "DSC_ap-rCBV", "DSC_PH", "DSC_PSR"
+            "images_DSC": [
+                "DSC_ap-rCBV",
+                "DSC_PH",
+                "DSC_PSR",
+            ],  # "DSC_ap-rCBV", "DSC_PH", "DSC_PSR"
             "images_DTI": ["DTI_AD", "DTI_FA", "DTI_RD", "DTI_TR"],
             "images_structural": ["FLAIR", "T1.", "T1GD", "T2"],
         }
@@ -233,9 +237,7 @@ class CustomDataset(Dataset):
                 ]
                 case_files = {n: sort_image_list(lista, modality_order[modality])}
 
-                
                 modality_files.append(case_files)
-
 
                 # Obtener el archivo de etiqueta correspondiente
                 label_file = os.path.join(
@@ -247,9 +249,9 @@ class CustomDataset(Dataset):
                     label_file = os.path.join(
                         section_path,
                         "labels",
-                        f"{case_folder}_combined2_approx_segm.nii.gz"
-                    ) # automated_approx_segm.nii.gz / combined_approx_segm.nii.gz /combined2_approx_segm.nii.gz
-                   
+                        f"{case_folder}_combined3_approx_segm.nii.gz",
+                    )  # automated_approx_segm.nii.gz / combined_approx_segm.nii.gz /combined2_approx_segm.nii.gz
+
                     # combined2_approx_segm.nii.gz -> infiltracion + vasogenico (ConvertToMultiChannelBasedOnAnotatedInfiltration(keys="label"))
                     # combined3_approx_segm.nii.gz -> (TC-infiltracion) + vasogenico
                     # automated_approx_segm.nii.gz -> TC + edema
@@ -272,6 +274,7 @@ class CustomDataset(Dataset):
         # print(f"Image files: {converted_list[318]}")
         # print(f"Label files: {label_files[318]}")
         return converted_list, label_files
+
 
 ## Custom datset con recurrencia
 class CustomDatasetRec(Dataset):
@@ -297,18 +300,20 @@ class CustomDatasetRec(Dataset):
 
     #     # Preparar datos para transformaciones
     #     data = {"image": image, "label": label, "recurrence":recurrence}
-                
+
     #     try:
     #         if self.transform is not None:
     #             data = apply_transform(self.transform, data=data)
     #             # Ensure recurrence has correct shape
     #     except Exception as e:
-    #         raise RuntimeError(f"Error aplicando transformaciones en caso {index}: {e}")        
+    #         raise RuntimeError(f"Error aplicando transformaciones en caso {index}: {e}")
     #     return data["image"], data["label"], data["recurrence"]
     def _transform(self, index: int):
         image = self.image_files[index]  # Lista de 11 modalidades
         label = self.label_files[index]  # Path de la etiqueta
-        recurrence = self.recurrence_files[index]  # Path de la imagen de recurrencia o None
+        recurrence = self.recurrence_files[
+            index
+        ]  # Path de la imagen de recurrencia o None
 
         # print(f"\nTransformando caso {index}:")
         # print(f"  Image paths: {image}")
@@ -316,15 +321,21 @@ class CustomDatasetRec(Dataset):
         # print(f"  Recurrence path: {recurrence}")
 
         if not all(isinstance(p, str) and os.path.exists(p) for p in image):
-            raise ValueError(f"Error en caso {index}: Algunos paths de imagen no son válidos o no existen: {image}")
+            raise ValueError(
+                f"Error en caso {index}: Algunos paths de imagen no son válidos o no existen: {image}"
+            )
         if not isinstance(label, str) or not os.path.exists(label):
-            raise ValueError(f"Error en caso {index}: Label path no es válido o no existe: {label}")
+            raise ValueError(
+                f"Error en caso {index}: Label path no es válido o no existe: {label}"
+            )
 
-        data = {"image": image, "label": label, "recurrence":recurrence}
-        
+        data = {"image": image, "label": label, "recurrence": recurrence}
+
         try:
             data = apply_transform(self.transform, data=data, log_stats=True)
-            print(f"After transforms - image shape: {data['image'].shape}, label shape: {data['label'].shape}, recurrence shape: {data['recurrence'].shape}")
+            print(
+                f"After transforms - image shape: {data['image'].shape}, label shape: {data['label'].shape}, recurrence shape: {data['recurrence'].shape}"
+            )
         except Exception as e:
             raise RuntimeError(f"Error aplicando transformaciones en caso {index}: {e}")
 
@@ -341,7 +352,11 @@ class CustomDatasetRec(Dataset):
             image = self.image_files[index]
             label = self.label_files[index]
             recurrence = self.recurrence_files[index]
-        return {"image": image, "label": label, "recurrence": recurrence, }
+        return {
+            "image": image,
+            "label": label,
+            "recurrence": recurrence,
+        }
 
     def _load_files(self):
         image_files, label_files, recurrence_files = [], [], []
@@ -349,7 +364,10 @@ class CustomDatasetRec(Dataset):
 
         modalities = ["images_DSC", "images_DTI", "images_structural"]
         modality_order = {
-            "images_DSC": ["DSC_ap-rCBV", "DSC_PSR"], # "DSC_ap-rCBV", "DSC_PH", "DSC_PSR"
+            "images_DSC": [
+                "DSC_ap-rCBV",
+                "DSC_PSR",
+            ],  # "DSC_ap-rCBV", "DSC_PH", "DSC_PSR"
             "images_DTI": ["DTI_AD", "DTI_FA", "DTI_RD", "DTI_TR"],
             "images_structural": ["FLAIR", "T1.", "T1GD", "T2"],
         }
@@ -363,19 +381,27 @@ class CustomDatasetRec(Dataset):
                 lista = [
                     os.path.join(case_path, file)
                     for file in os.listdir(case_path)
-                    if file.endswith(".nii.gz") and not file.endswith("segmentation.nii.gz") and not file.endswith("DSC_PH.nii.gz")
+                    if file.endswith(".nii.gz")
+                    and not file.endswith("segmentation.nii.gz")
+                    and not file.endswith("DSC_PH.nii.gz")
                 ]
                 case_files = {n: sort_image_list(lista, modality_order[modality])}
                 modality_files.append(case_files)
 
                 # Extraer el ID base del caso (por ejemplo, UPENN-GBM-00307)
-                case_id = case_folder.split("_")[0]  # Toma UPENN-GBM-00307 de UPENN-GBM-00307_11
+                case_id = case_folder.split("_")[
+                    0
+                ]  # Toma UPENN-GBM-00307 de UPENN-GBM-00307_11
                 # print(f"Procesando case_folder: {case_folder}, case_id: {case_id}")  # Depuración
 
-                label_file = os.path.join(section_path, "labels", f"{case_folder}_segm.nii.gz")
+                label_file = os.path.join(
+                    section_path, "labels", f"{case_folder}_segm.nii.gz"
+                )
                 if not os.path.exists(label_file):
                     label_file = os.path.join(
-                        section_path, "labels", f"{case_folder}_combined2_approx_segm.nii.gz"
+                        section_path,
+                        "labels",
+                        f"{case_folder}_combined2_approx_segm.nii.gz",
                     )
                     # combined2_approx_segm.nii.gz -> infiltracion + vasogenico
                     # combined3_approx_segm.nii.gz -> (TC-infiltracion) + vasogenico
@@ -383,12 +409,15 @@ class CustomDatasetRec(Dataset):
 
                 # Obtener el archivo de recurrencia correspondiente
                 recurrence_path = os.path.join(section_path, "recurrence")
-                recurrence_file = os.path.join(recurrence_path, f"{case_id}_21_T1GD_flo_reg.nii.gz")
+                recurrence_file = os.path.join(
+                    recurrence_path, f"{case_id}_21_T1GD_flo_reg.nii.gz"
+                )
                 # print(f"Generando recurrence path para {case_id}: {recurrence_file}")  # Depuración
                 if not os.path.exists(recurrence_file):
-                    print(f"Advertencia: No se encontró recurrence file: {recurrence_file}")
+                    print(
+                        f"Advertencia: No se encontró recurrence file: {recurrence_file}"
+                    )
                     recurrence_file = None
-                    
 
                 if label_file not in label_files and os.path.exists(label_file):
                     label_files.append(label_file)
@@ -401,9 +430,12 @@ class CustomDatasetRec(Dataset):
             for key, values in enumerate(l):
                 converted_list[key] += values[key]
 
-        print(f"Found {len(converted_list)} images, {len(label_files)} labels, "
-              f"and {len(recurrence_files)} recurrence files.")
+        print(
+            f"Found {len(converted_list)} images, {len(label_files)} labels, "
+            f"and {len(recurrence_files)} recurrence files."
+        )
         return converted_list, label_files, recurrence_files
+
 
 ### Datset para Segmentaci'on de N, Edema y Activo ###
 class CustomDatasetSeg(Dataset):
@@ -548,14 +580,15 @@ def combine_labels(path_label1, path_label2, output_path):
         combined_data, output_path, header=label1_img.header, affine=label1_img.affine
     )
 
+
 def combine_labels_recurrence(path_label1, path_label2, output_path):
     # Leer los volúmenes de segmentación
     label1_img = nib.load(path_label1)
     label2_img = nib.load(path_label2)
 
     # Obtener los datos de los volúmenes
-    label1_data = label1_img.get_fdata() # Seg Image base
-    label2_data = label2_img.get_fdata() # Seg Image follow registrada
+    label1_data = label1_img.get_fdata()  # Seg Image base
+    label2_data = label2_img.get_fdata()  # Seg Image follow registrada
 
     # Imprimir los valores que toma el volumen
     print(np.unique(label1_data))
@@ -577,9 +610,9 @@ def combine_labels_recurrence(path_label1, path_label2, output_path):
     #     combined_data[(label1_data == 2.0) & (label2_data == v)] = 6.0
     ################################################################################
     #### TC + Infiltracion (6) - Edema (2)
-    # valores_interes = np.concatenate(([valores[1]], valores[2])) 
+    # valores_interes = np.concatenate(([valores[1]], valores[2]))
     combined_data[(label2_data == valores[1])] = 2.0
-    if len(valores)>2:
+    if len(valores) > 2:
         combined_data[(label2_data == valores[2])] = 6.0
     combined_data[(label1_data == 1.0) | (label1_data == 4)] = 6.0
 
