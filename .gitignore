@@ -163,6 +163,7 @@ cython_debug/
 
 # Data
 Data/
+test_6_basic/
 wandb/
 artifacts/
 # Dataset/
